@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block stylesheet %}
+    <link href="{% static 'css/introjs.min.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'js/intro.min.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 检查 localStorage 中的标志位
+            if (!localStorage.getItem('home')) {
+                // 如果标志位不存在，说明是第一次访问
+                introJs().setOptions({
+                    nextLabel: '下一步',
+                    prevLabel: '上一步',
+                    doneLabel: '完成'
+                }).start();
+
+                // 设置标志位，表示用户已看过引导
+                localStorage.setItem('home', 'true');
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active" data-intro="Welcome to Knowledge Share!" data-step="1">Boards</li>
+{% endblock %}
+
+{% block content %}
+    <div class="mb-4 row">
+        <div class="col-md-4 col-4 text-info" data-intro="Click here to download the introduction" data-step="2">
+            <b>
+                What is this?<br> <a href="http://124.222.31.129:8000/boards/6/topics/42/posts/32/download/">click to
+                download the introduction</a>
+            </b>
+        </div>
+        <div class="col-md-8 col-8" data-intro="Searching here" data-step="4">
+            <form method="get" action="" class="form-inline justify-content-end">
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="query" class="form-control" placeholder="Search topics">
+                </div>
+                <button type="submit" class="btn btn-info mb-2" id="search">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <table class="table" data-intro="These are different categorise, click to open it!" data-step="3">
+        <thead class="thead-inverse">
+        <tr>
+            <th>Board</th>
+            <th>Posts</th>
+            <th>Topics</th>
+            <th>Last Post</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for board in boards %}
+            <tr>
+                <td>
+                    <a href="{% url 'board_topics' board.pk %}">{{ board.name }}</a>
+                    <small class="text-muted d-block">{{ board.description }}</small>
+                </td>
+                <td class="align-middle">
+                    {{ board.get_posts_count }}
+                </td>
+                <td class="align-middle">
+                    {{ board.topics.count }}
+                </td>
+                <td class="align-middle">
+                    {% with post=board.get_last_post %}
+                        {% if post %}
+                            <small>
+                                <a href="{% url 'topic_posts' board.pk post.topic.pk %}">
+                                    By {{ post.created_by.username }} at {{ post.created_at }}
+                                </a>
+                            </small>
+                        {% else %}
+                            <small class="text-muted">
+                                <em>No posts yet.</em>
+                            </small>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+        {% empty %}
+            <div class="alert alert-info" role="alert">
+                It's empty here.
+            </div>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

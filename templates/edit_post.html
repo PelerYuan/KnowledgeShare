@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Edit post{% endblock %}
+
+{% block stylesheet %}
+    <link rel="stylesheet" href="{% static 'css/simplemde.min.css' %}">
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'js/simplemde.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var simplemde = new SimpleMDE({
+            autoDownloadFontAwesome: false
+        });
+
+        $(document).ready(function () {
+            // 隐藏进度条和状态消息在页面加载时
+            $('#progress-bar').hide();
+            $('#upload-status').hide();
+
+            $('form').on('submit', function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+
+                // 显示进度条和状态消息
+                $('#progress-bar').show();
+                $('#upload-status').html('Uploading...Please wait until finish.').show();
+
+                $.ajax({
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = evt.loaded / evt.total;
+                                percentComplete = parseInt(percentComplete * 100);
+                                $('#progress-bar').val(percentComplete);
+                                if (percentComplete === 100) {
+                                    $('#upload-status').html('Upload Complete, the page will refresh');
+                                }
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    type: 'POST',
+                    url: window.location.href,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        window.location.href = response.redirect_url;
+                    },
+                    error: function (response) {
+                        $('#upload-status').html('Error in File Upload');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Boards</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'board_topics' post.topic.board.pk %}">{{ post.topic.board.name }}</a>
+    </li>
+    <li class="breadcrumb-item"><a
+            href="{% url 'topic_posts' post.topic.board.pk post.topic.pk %}">{{ post.topic.subject }}</a></li>
+    <li class="breadcrumb-item active">Edit post</li>
+{% endblock %}
+
+{% block content %}
+    <form method="post" class="mb-4" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if post.get_file_name %}
+            {#  form.html special  #}
+            {% load form_tags widget_tweaks %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p{% if forloop.last %} class="mb-0"{% endif %}>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% for field in form %}
+                <div class="form-group">
+                    {% if field.name == 'file' %}
+                        Current file:<br>
+                        <a href="{% url 'download_post' pk=post.topic.board.pk topic_pk=post.topic.pk post_pk=post.pk %}"
+                           class="btn btn-info btn-sm" role="button">Download {{ post.get_file_name }}</a>
+                        <br>
+                        New file to replace the current one:<br>
+                        <input type="file" name="{{ field.name }}" class="form-control"
+                               id="{{ field.id_for_label }}">
+                    {% else %}
+                        {{ field.label_tag }}
+                        {% render_field field class=field|input_class %}
+                        {% for error in field.errors %}
+                            <div class="invalid-feedback">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">
+                                {{ field.help_text|safe }}
+                            </small>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {#  form.html special  #}
+        {% else %}
+            {% include 'includes/form.html' %}
+        {% endif %}
+        <progress id="progress-bar" value="0" max="100" style="width:100%;"></progress>
+        <div id="upload-status" class="mt-2"></div>
+        <button type="submit" class="btn btn-success">Save changes</button>
+        <a href="{% url 'topic_posts' post.topic.board.pk post.topic.pk %}" class="btn btn-outline-secondary"
+           role="button">Cancel</a>
+    </form>
+{% endblock %}

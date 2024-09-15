@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Start a New Topic{% endblock %}
+{% load static %}
+{% block stylesheet %}
+    <link rel="stylesheet" href="{% static 'css/simplemde.min.css' %}">
+{% endblock %}
+{% block javascript %}
+    <script src="{% static 'js/simplemde.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var simplemde = new SimpleMDE({
+            autoDownloadFontAwesome: false
+        });
+
+        $(document).ready(function () {
+            // 隐藏进度条和状态消息在页面加载时
+            $('#progress-bar').hide();
+            $('#upload-status').hide();
+
+            $('form').on('submit', function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+
+                // 清除之前的错误提示
+                $('.invalid-feedback').remove();
+                $('.form-group').removeClass('is-invalid');
+
+                // 显示进度条和状态消息
+                $('#progress-bar').show();
+                $('#upload-status').html('Uploading... Please wait until finish.').show();
+
+                $.ajax({
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener('progress', function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = evt.loaded / evt.total;
+                                percentComplete = parseInt(percentComplete * 100);
+                                $('#progress-bar').val(percentComplete);
+                                if (percentComplete === 100) {
+                                    $('#upload-status').html('Upload Complete, the page will refresh');
+                                }
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    type: 'POST',
+                    url: window.location.href,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        window.location.href = response.redirect_url;
+                    },
+                    error: function (xhr) {
+                        // 隐藏进度条
+                        $('#progress-bar').hide();
+
+                        if (xhr.status === 400) {
+                            // 显示表单错误信息
+                            $('#upload-status').html('Subject is required!');
+                            var errors = xhr.responseJSON.errors;
+                            $.each(errors, function (field, messages) {
+                                var fieldElement = $('[name="' + field + '"]');
+                                var fieldGroup = fieldElement.closest('.form-group');
+                                fieldGroup.addClass('is-invalid');
+                                $.each(messages, function (index, message) {
+                                    fieldGroup.append('<div class="invalid-feedback">' + message + '</div>');
+                                });
+                            });
+                        } else {
+                            // 处理其他可能的错误
+                            $('#upload-status').html('Error in File Upload');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Boards</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'board_topics' board.pk %}">{{ board.name }}</a></li>
+    <li class="breadcrumb-item active">New topic</li>
+{% endblock %}
+{% block content %}
+    <form id="new-topic-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form.html' %}
+        <progress id="progress-bar" value="0" max="100" style="width:100%;"></progress>
+        <button type="submit" class="btn btn-success">Post</button>
+    </form>
+    <div id="upload-status"></div>
+{% endblock %}

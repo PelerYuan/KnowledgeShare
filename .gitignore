@@ -1,0 +1,5 @@
+db.sqlite3
+storage/avatars/
+storage/temp/
+boards/migrations/
+accounts/migrations/

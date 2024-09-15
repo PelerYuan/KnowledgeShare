@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% load humanize %}
+
+{% block title %}
+    {{ board.name }} - {{ block.super }}
+{% endblock %}
+
+{% load static %}
+
+{% block stylesheet %}
+    <link href="{% static 'css/introjs.min.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block javascript %}
+    <script src="{% static 'js/intro.min.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 检查 localStorage 中的标志位
+            if (!localStorage.getItem('topics')) {
+                // 如果标志位不存在，说明是第一次访问
+                introJs().setOptions({
+                    nextLabel: '下一步',
+                    prevLabel: '上一步',
+                    doneLabel: '完成'
+                }).start();
+
+                // 设置标志位，表示用户已看过引导
+                localStorage.setItem('topics', 'true');
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{% url 'home' %}">Boards</a></li>
+    <li class="breadcrumb-item active" data-intro="This is {{ board.name }} board！" data-step="1">{{ board.name }}</li>
+{% endblock %}
+
+{% block content %}
+    <div class="mb-4 row">
+        <div class="col-md-4 col-4">
+            <a href="{% url 'new_topic' board.pk %}" class="btn btn-primary" data-intro="Click here to share your knowledge" data-step="2">New topic</a>
+        </div>
+        <div class="col-md-8 col-8" data-intro="Searching here" data-step="4">
+            <form method="get" action="" class="form-inline justify-content-end">
+                <div class="form-group mb-2 mr-2">
+                    <input type="text" name="query" class="form-control" placeholder="Search topics">
+                </div>
+                <button type="submit" class="btn btn-info mb-2" id="search">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-striped mb-4" data-intro="Learn Knowledges!" data-step="3">
+        <thead class="thead-inverse">
+        <tr>
+            <th>Topic</th>
+            <th>Starter</th>
+            <th>Replies</th>
+            <th>Views</th>
+            <th>Last Update</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for topic in topics %}
+            {% url 'topic_posts' board.pk topic.pk as topic_url %}
+            <tr>
+                <td>
+                    <p class="mb-0">
+                        <a href="{{ topic_url }}">{{ topic.subject }}</a>
+                    </p>
+                    <small class="text-muted">
+                        Pages:
+                        {% for i in topic.get_page_range %}
+                            <a href="{{ topic_url }}?page={{ i }}">{{ i }}</a>
+                        {% endfor %}
+                        {% if topic.has_many_pages %}
+                            ... <a href="{{ topic_url }}?page={{ topic.get_page_count }}">Last Page</a>
+                        {% endif %}
+                    </small>
+                </td>
+                <td class="align-middle">{{ topic.starter.username }}</td>
+                <td class="align-middle">{{ topic.replies }}</td>
+                <td class="align-middle">{{ topic.views }}</td>
+                <td class="align-middle">{{ topic.last_updated|naturaltime }}</td>
+            </tr>
+        {% empty %}
+            <div class="alert alert-info" role="alert">
+                It's empty here.
+            </div>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% include 'includes/pagination.html' %}
+
+{% endblock %}
