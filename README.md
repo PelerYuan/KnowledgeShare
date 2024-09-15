@@ -1,5 +1,7 @@
 # Introduction
 
+See all the documents here: https://www.blog.peler.top/KnowledgeShare/#/
+
 ## Development Background
 
 In today’s self-study-driven educational environment, it is crucial for every student to have access to quality resources and peer support. As a senior high school student who has been self-taught in programming since primary school, I have personally experienced the challenges associated with this. While there are numerous online communities for students to exchange ideas, many of them lack file-sharing capabilities, which is highly inconvenient. Additionally, large online communities with thousands of members make it difficult to ensure the legality and appropriateness of content. These issues inspired me to develop **Knowledge Share**.
