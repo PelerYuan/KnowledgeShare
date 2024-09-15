@@ -47,7 +47,7 @@ python manage.py runserver
 
 If everything is correct, visit http://127.0.0.1:8000/ now, and you can see the page:
 
-![image-20240915084541977](/home/peler/PycharmProjects/KnowledgeShare/doc/deploy.assets/image-20240915084541977.png)
+![image-20240915084541977](/deploy.assets/image-20240915084541977.png)
 
 ### Create administrator account
 
